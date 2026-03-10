@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -566,8 +566,8 @@
                 if (!user && !pass) return showToast("Enter at least one field", true);
                 
                 const data = {};
-                if (user) data.username = user;
-                if (pass) data.password = pass;
+                if (user) data.Username_aug = user;
+                if (pass) data.Password_aug = pass;
                 updateDatabase(data, "Credentials updated!");
             };
 
