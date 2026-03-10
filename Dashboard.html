@@ -522,10 +522,10 @@
                 try {
                     const data = await databases.getDocument(CONFIG.databaseId, CONFIG.collectionId, CONFIG.documentId);
                     
-                    elements.displayUser.textContent = data.username || 'Not set';
+                    elements.displayUser.textContent = data.Username_aug || 'Not set';
                     elements.displayPass.textContent = '•'.repeat(8);
                     elements.displayWa.textContent = data.Whatsapp_link || 'No link set';
-                    elements.welcomeUser.textContent = data.username || 'Admin';
+                    elements.welcomeUser.textContent = data.Username_aug || 'Admin';
                     elements.inputWa.value = data.Whatsapp_link || '';
                     
                     showState('content');
