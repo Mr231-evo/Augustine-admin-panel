@@ -1,1 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard · Earning Mastery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4fa;
+            color: #1a2f45;
+            min-height: 100vh;
+            overflow-y: auto; /* Ensure scrolling works */
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-bottom: 4rem; /* Extra space at bottom */
+        }
+
+        /* Loading state */
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 2rem;
+            margin: 2rem 0;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            background: white;
+            padding: 1.2rem 2rem;
+            border-radius: 2rem;
+            box-shadow: 0 8px 20px -12px #1e3a5f;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #122b44;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logout-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 2rem;
+            color: #b91c1c;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            border: 1px solid #fbc5c5;
+            font-size: 0.95rem;
+        }
+
+        .logout-btn:hover {
+            background: #fecaca;
+            transform: translateY(-2px);
+        }
+
+        /* Error card */
+        .error-card {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 2rem;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            color: #991b1b;
+        }
+
+        .error-card button {
+            background: #991b1b;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 2rem;
+            margin-top: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .error-card button:hover {
+            background: #7f1d1d;
+        }
+
+        /* Welcome card */
+        .welcome-card {
+            background: linear-gradient(135deg, #1a3a5e, #0e2a46);
+            color: white;
+            padding: 2rem;
+            border-radius: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 30px -12px #0e2942;
+        }
+
+        .welcome-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-card p {
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        /* Profile card */
+        .profile-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 15px 30px -15px #1c3550;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #173353;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eef4fb;
+        }
+
+        .info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-bottom: 2.5rem;
+            background: #f8fafd;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .info-label {
+            width: 140px;
+            color: #5e7b9c;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .info-value {
+            flex: 1;
+            font-weight: 500;
+            color: #142d47;
+            background: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-family: 'SF Mono', monospace;
+            word-break: break-word;
+            border: 1px solid #e2eaf5;
+        }
+
+        .password-masked {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 3px;
+            font-size: 1rem;
+        }
+
+        .whatsapp-value {
+            color: #0c6b4b;
+            background: #e6f7f0;
+            border: 1px solid #b8e6d4;
+        }
+
+        .placeholder-value {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* Edit forms */
+        .edit-section {
+            background: #f5f9ff;
+            border-radius: 1.5rem;
+            padding: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .edit-section h3 {
+            color: #1a3c62;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2f4d75;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 1.3rem;
+            background: white;
+            border: 2px solid #dde7f3;
+            border-radius: 2rem;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .form-control:disabled {
+            background: #f1f5f9;
+            cursor: not-allowed;
+        }
+
+        .btn-update {
+            background: #1d4a7c;
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-update:hover:not(:disabled) {
+            background: #2563ab;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -8px #122f4e;
+        }
+
+        .btn-update:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-whatsapp {
+            background: #0f6e4a;
+        }
+
+        .btn-whatsapp:hover:not(:disabled) {
+            background: #1a8b5c;
+        }
+
+        .test-btn {
+            background: none;
+            border: 1px dashed #2563eb;
+            color: #2563eb;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .test-btn:hover:not(:disabled) {
+            background: #eef6ff;
+            border-style: solid;
+        }
+
+        .test-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #94a3b8;
+            color: #64748b;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e4d3a;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            box-shadow: 0 15px 30px -10px #0e2942;
+            font-weight: 500;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border: 1px solid #4b9b7a;
+        }
+
+        .toast.error {
+            background: #942828;
+            border-color: #d66b6b;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 1rem; }
+            .header { flex-direction: column; gap: 1rem; text-align: center; }
+            .info-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .info-label { width: auto; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <!-- Header - always visible -->
+        <div class="header">
+            <h1>
+                <span>⚡</span> Earning Mastery Admin
+            </h1>
+            <button class="logout-btn" id="logoutBtn">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <p style="color: #475569;">Loading your profile...</p>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem;">Please wait</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-card" style="display: none;">
+            <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">⚠️</span>
+            <h3 style="margin-bottom: 0.5rem;">Failed to load data</h3>
+            <p id="errorMessage">Connection error</p>
+            <button id="retryBtn">Try Again</button>
+        </div>
+
+        <!-- Content (hidden until loaded) -->
+        <div id="contentArea" style="display: none;">
+            <!-- Welcome -->
+            <div class="welcome-card">
+                <h2>Welcome back, <span id="welcomeUsername">Admin</span>!</h2>
+                <p>Manage your profile credentials and WhatsApp integration</p>
+            </div>
+
+            <!-- Profile Information Card -->
+            <div class="profile-card">
+                <div class="section-title">
+                    <span>👤</span> Your Profile Information
+                </div>
+
+                <!-- Current Info Display -->
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Username</span>
+                        <span class="info-value" id="displayUsername">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Password</span>
+                        <span class="info-value password-masked" id="displayPassword">••••••••</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">WhatsApp Link</span>
+                        <span class="info-value whatsapp-value" id="displayWhatsapp">—</span>
+                    </div>
+                </div>
+
+                <!-- Update Username & Password Section -->
+                <div class="edit-section">
+                    <h3><span>✏️</span> Update Login Credentials</h3>
+                    <div class="form-group">
+                        <label>New Username</label>
+                        <input type="text" id="newUsername" class="form-control" placeholder="Enter new username">
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="text" id="newPassword" class="form-control" placeholder="Enter new password">
+                    </div>
+                    <button class="btn-update" id="updateAdminBtn">
+                        <span>💾</span> Update Credentials
+                    </button>
+                </div>
+
+                <!-- Update WhatsApp Section -->
+                <div class="edit-section">
+                    <h3><span>📲</span> Update WhatsApp Link</h3>
+                    <div class="form-group">
+                        <label>New WhatsApp Link</label>
+                        <input type="url" id="newWhatsapp" class="form-control" placeholder="https://chat.whatsapp.com/...">
+                    </div>
+                    <button class="btn-update btn-whatsapp" id="updateWhatsappBtn">
+                        <span>💾</span> Save WhatsApp Link
+                    </button>
+                </div>
+
+                <!-- Test Link Button -->
+                <div style="margin-top: 1.5rem;">
+                    <button id="testLinkBtn" class="test-btn">
+                        🔍 Test Current WhatsApp Link
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 2rem; color: #7f9cbb; font-size: 0.85rem;">
+                <p>© 2025 Earning Mastery · Admin Panel</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0/dist/iife/sdk.min.js"></script>
+    <script>
+        (function() {
+            // Auth guard
+            if (!sessionStorage.getItem('adminAuth')) {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            // Config
+            const CONFIG = {
+                endpoint: 'https://fra.cloud.appwrite.io/v1',
+                projectId: '69a1fbfc003d9ff7c2d6',
+                databaseId: '69a1fc36002e16fa4035',
+                collectionId: 'admin_table',
+                documentId: '69a1fdc3002727c383e7',
+                usernameField: 'username',
+                passwordField: 'password',
+                whatsappField: 'Whatsapp_link'
+            };
+
+            let currentData = {};
+            let isLoading = false;
+
+            // DOM elements
+            const loadingEl = document.getElementById('loadingState');
+            const errorEl = document.getElementById('errorState');
+            const contentEl = document.getElementById('contentArea');
+            const errorMessageEl = document.getElementById('errorMessage');
+            
+            const displayUsername = document.getElementById('displayUsername');
+            const displayPassword = document.getElementById('displayPassword');
+            const displayWhatsapp = document.getElementById('displayWhatsapp');
+            const welcomeUsername = document.getElementById('welcomeUsername');
+            const newUsername = document.getElementById('newUsername');
+            const newPassword = document.getElementById('newPassword');
+            const newWhatsapp = document.getElementById('newWhatsapp');
+            
+            const updateAdminBtn = document.getElementById('updateAdminBtn');
+            const updateWhatsappBtn = document.getElementById('updateWhatsappBtn');
+            const testLinkBtn = document.getElementById('testLinkBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const retryBtn = document.getElementById('retryBtn');
+
+            // Initialize Appwrite
+            const client = new Appwrite.Client();
+            const databases = new Appwrite.Databases(client);
+            
+            client
+                .setEndpoint(CONFIG.endpoint)
+                .setProject(CONFIG.projectId)
+                .setSelfSigned(true)
+                .setMode('admin');
+
+            // Show/hide states
+            function showLoading() {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                contentEl.style.display = 'none';
+            }
+
+            function showError(message) {
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                contentEl.style.display = 'none';
+                errorMessageEl.textContent = message || 'Failed to connect to server';
+            }
+
+            function showContent() {
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'none';
+                contentEl.style.display = 'block';
+            }
+
+            // Show toast
+            function showToast(message, isError = false) {
+                const toast = document.createElement('div');
+                toast.className = `toast ${isError ? 'error' : ''}`;
+                toast.innerHTML = `
+                    <span>${isError ? '⚠️' : '✅'}</span>
+                    <span>${message}</span>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Mask password
+            function maskPassword(pass) {
+                if (!pass) return '••••••••';
+                return '•'.repeat(Math.min(pass.length, 10));
+            }
+
+            // Enable/disable form elements during loading
+            function setFormEnabled(enabled) {
+                const elements = [
+                    newUsername, newPassword, newWhatsapp,
+                    updateAdminBtn, updateWhatsappBtn, testLinkBtn
+                ];
+                elements.forEach(el => {
+                    if (el) el.disabled = !enabled;
+                });
+            }
+
+            // Load data
+            async function loadData() {
+                if (isLoading) return;
+                
+                isLoading = true;
+                setFormEnabled(false);
+                showLoading();
+                
+                try {
+                    console.log('Fetching data from Appwrite...');
+                    
+                    const resp = await databases.getDocument(
+                        CONFIG.databaseId,
+                        CONFIG.collectionId,
+                        CONFIG.documentId
+                    );
+                    
+                    console.log('Data received:', resp);
+                    
+                    currentData = resp;
+                    
+                    const username = resp[CONFIG.usernameField] || 'Not set';
+                    const password = resp[CONFIG.passwordField] || '';
+                    const whatsapp = resp[CONFIG.whatsappField] || 'No link configured';
+                    
+                    displayUsername.textContent = username;
+                    displayPassword.textContent = maskPassword(password);
+                    displayWhatsapp.textContent = whatsapp;
+                    welcomeUsername.textContent = username;
+                    
+                    // Set placeholders
+                    newUsername.placeholder = username;
+                    newPassword.placeholder = 'Enter new password';
+                    newWhatsapp.value = whatsapp !== 'No link configured' ? whatsapp : '';
+                    
+                    showContent();
+                    
+                } catch (error) {
+                    console.error('Load error:', error);
+                    
+                    let errorMsg = 'Connection error';
+                    if (error.message.includes('404')) {
+                        errorMsg = 'Document not found - check your collection ID';
+                    } else if (error.message.includes('401')) {
+                        errorMsg = 'Permission denied - check your permissions';
+                    } else if (error.me
