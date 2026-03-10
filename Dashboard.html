@@ -454,89 +454,61 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0/dist/iife/sdk.min.js"></script>
+       <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0/dist/iife/sdk.min.js"></script>
     <script>
         (function() {
-            // Auth guard
+            // 1. Auth guard: Redirect if not logged in
             if (!sessionStorage.getItem('adminAuth')) {
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // Config
+            // 2. Configuration
             const CONFIG = {
                 endpoint: 'https://fra.cloud.appwrite.io/v1',
                 projectId: '69a1fbfc003d9ff7c2d6',
                 databaseId: '69a1fc36002e16fa4035',
                 collectionId: 'admin_table',
-                documentId: '69a1fdc3002727c383e7',
-                usernameField: 'username',
-                passwordField: 'password',
-                whatsappField: 'Whatsapp_link'
+                documentId: '69a1fdc3002727c383e7'
             };
 
-            let currentData = {};
-            let isLoading = false;
-
-            // DOM elements
-            const loadingEl = document.getElementById('loadingState');
-            const errorEl = document.getElementById('errorState');
-            const contentEl = document.getElementById('contentArea');
-            const errorMessageEl = document.getElementById('errorMessage');
-            
-            const displayUsername = document.getElementById('displayUsername');
-            const displayPassword = document.getElementById('displayPassword');
-            const displayWhatsapp = document.getElementById('displayWhatsapp');
-            const welcomeUsername = document.getElementById('welcomeUsername');
-            const newUsername = document.getElementById('newUsername');
-            const newPassword = document.getElementById('newPassword');
-            const newWhatsapp = document.getElementById('newWhatsapp');
-            
-            const updateAdminBtn = document.getElementById('updateAdminBtn');
-            const updateWhatsappBtn = document.getElementById('updateWhatsappBtn');
-            const testLinkBtn = document.getElementById('testLinkBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const retryBtn = document.getElementById('retryBtn');
-
-            // Initialize Appwrite
-            const client = new Appwrite.Client();
-            const databases = new Appwrite.Databases(client);
-            
-            client
+            // 3. Initialize Appwrite
+            const client = new Appwrite.Client()
                 .setEndpoint(CONFIG.endpoint)
-                .setProject(CONFIG.projectId)
-                .setSelfSigned(true)
-                .setMode('admin');
+                .setProject(CONFIG.projectId);
+            const databases = new Appwrite.Databases(client);
 
-            // Show/hide states
-            function showLoading() {
-                loadingEl.style.display = 'block';
-                errorEl.style.display = 'none';
-                contentEl.style.display = 'none';
+            // 4. DOM Elements
+            const elements = {
+                loading: document.getElementById('loadingState'),
+                error: document.getElementById('errorState'),
+                content: document.getElementById('contentArea'),
+                errorMsg: document.getElementById('errorMessage'),
+                displayUser: document.getElementById('displayUsername'),
+                displayPass: document.getElementById('displayPassword'),
+                displayWa: document.getElementById('displayWhatsapp'),
+                welcomeUser: document.getElementById('welcomeUsername'),
+                inputUser: document.getElementById('newUsername'),
+                inputPass: document.getElementById('newPassword'),
+                inputWa: document.getElementById('newWhatsapp'),
+                btnUpdateAdmin: document.getElementById('updateAdminBtn'),
+                btnUpdateWa: document.getElementById('updateWhatsappBtn'),
+                btnTest: document.getElementById('testLinkBtn'),
+                btnLogout: document.getElementById('logoutBtn'),
+                btnRetry: document.getElementById('retryBtn')
+            };
+
+            // 5. Utility Functions
+            function showState(state) {
+                elements.loading.style.display = state === 'loading' ? 'block' : 'none';
+                elements.error.style.display = state === 'error' ? 'block' : 'none';
+                elements.content.style.display = state === 'content' ? 'block' : 'none';
             }
 
-            function showError(message) {
-                loadingEl.style.display = 'none';
-                errorEl.style.display = 'block';
-                contentEl.style.display = 'none';
-                errorMessageEl.textContent = message || 'Failed to connect to server';
-            }
-
-            function showContent() {
-                loadingEl.style.display = 'none';
-                errorEl.style.display = 'none';
-                contentEl.style.display = 'block';
-            }
-
-            // Show toast
             function showToast(message, isError = false) {
                 const toast = document.createElement('div');
                 toast.className = `toast ${isError ? 'error' : ''}`;
-                toast.innerHTML = `
-                    <span>${isError ? '⚠️' : '✅'}</span>
-                    <span>${message}</span>
-                `;
+                toast.innerHTML = `<span>${isError ? '⚠️' : '✅'}</span><span>${message}</span>`;
                 document.body.appendChild(toast);
                 setTimeout(() => {
                     toast.style.opacity = '0';
@@ -544,66 +516,83 @@
                 }, 3000);
             }
 
-            // Mask password
-            function maskPassword(pass) {
-                if (!pass) return '••••••••';
-                return '•'.repeat(Math.min(pass.length, 10));
-            }
-
-            // Enable/disable form elements during loading
-            function setFormEnabled(enabled) {
-                const elements = [
-                    newUsername, newPassword, newWhatsapp,
-                    updateAdminBtn, updateWhatsappBtn, testLinkBtn
-                ];
-                elements.forEach(el => {
-                    if (el) el.disabled = !enabled;
-                });
-            }
-
-            // Load data
+            // 6. Data Operations
             async function loadData() {
-                if (isLoading) return;
-                
-                isLoading = true;
-                setFormEnabled(false);
-                showLoading();
-                
+                showState('loading');
                 try {
-                    console.log('Fetching data from Appwrite...');
+                    const data = await databases.getDocument(CONFIG.databaseId, CONFIG.collectionId, CONFIG.documentId);
                     
-                    const resp = await databases.getDocument(
-                        CONFIG.databaseId,
-                        CONFIG.collectionId,
-                        CONFIG.documentId
+                    elements.displayUser.textContent = data.username || 'Not set';
+                    elements.displayPass.textContent = '•'.repeat(8);
+                    elements.displayWa.textContent = data.Whatsapp_link || 'No link set';
+                    elements.welcomeUser.textContent = data.username || 'Admin';
+                    elements.inputWa.value = data.Whatsapp_link || '';
+                    
+                    showState('content');
+                } catch (err) {
+                    elements.errorMsg.textContent = err.message;
+                    showState('error');
+                }
+            }
+
+            async function updateDatabase(payload, successMsg) {
+                try {
+                    elements.btnUpdateAdmin.disabled = true;
+                    elements.btnUpdateWa.disabled = true;
+                    
+                    await databases.updateDocument(
+                        CONFIG.databaseId, 
+                        CONFIG.collectionId, 
+                        CONFIG.documentId, 
+                        payload
                     );
                     
-                    console.log('Data received:', resp);
-                    
-                    currentData = resp;
-                    
-                    const username = resp[CONFIG.usernameField] || 'Not set';
-                    const password = resp[CONFIG.passwordField] || '';
-                    const whatsapp = resp[CONFIG.whatsappField] || 'No link configured';
-                    
-                    displayUsername.textContent = username;
-                    displayPassword.textContent = maskPassword(password);
-                    displayWhatsapp.textContent = whatsapp;
-                    welcomeUsername.textContent = username;
-                    
-                    // Set placeholders
-                    newUsername.placeholder = username;
-                    newPassword.placeholder = 'Enter new password';
-                    newWhatsapp.value = whatsapp !== 'No link configured' ? whatsapp : '';
-                    
-                    showContent();
-                    
-                } catch (error) {
-                    console.error('Load error:', error);
-                    
-                    let errorMsg = 'Connection error';
-                    if (error.message.includes('404')) {
-                        errorMsg = 'Document not found - check your collection ID';
-                    } else if (error.message.includes('401')) {
-                        errorMsg = 'Permission denied - check your permissions';
-                    } else if (error.me
+                    showToast(successMsg);
+                    loadData(); // Refresh display
+                    elements.inputUser.value = '';
+                    elements.inputPass.value = '';
+                } catch (err) {
+                    showToast(err.message, true);
+                } finally {
+                    elements.btnUpdateAdmin.disabled = false;
+                    elements.btnUpdateWa.disabled = false;
+                }
+            }
+
+            // 7. Event Listeners
+            elements.btnUpdateAdmin.onclick = () => {
+                const user = elements.inputUser.value.trim();
+                const pass = elements.inputPass.value.trim();
+                if (!user && !pass) return showToast("Enter at least one field", true);
+                
+                const data = {};
+                if (user) data.username = user;
+                if (pass) data.password = pass;
+                updateDatabase(data, "Credentials updated!");
+            };
+
+            elements.btnUpdateWa.onclick = () => {
+                const link = elements.inputWa.value.trim();
+                if (!link.startsWith('http')) return showToast("Invalid URL", true);
+                updateDatabase({ Whatsapp_link: link }, "WhatsApp link updated!");
+            };
+
+            elements.btnTest.onclick = () => {
+                const link = elements.displayWa.textContent;
+                if (link.startsWith('http')) window.open(link, '_blank');
+                else showToast("No valid link to test", true);
+            };
+
+            elements.btnLogout.onclick = () => {
+                sessionStorage.removeItem('adminAuth');
+                window.location.href = 'admin.html';
+            };
+
+            elements.btnRetry.onclick = loadData;
+
+            // Initialize
+            loadData();
+        })();
+    </script>
+ </body>
+    </html>
